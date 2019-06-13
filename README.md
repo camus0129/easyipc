@@ -1,16 +1,16 @@
 # **easyipc**
 A simple ipc lib, it can listen to the number of inter-process message execution and log view and inter-process program calls, and provides several good tools to simulate the message sent;There are three main files in the output, eipcd for daemon, libeipc.so for process integration library, and eipc for debugging tool set (eipcls, eipccat, eipcprint, eipcmsg are soft connections to eipc)
-## ln -s eipc eipcls
-## ln -s eipc eipccat
-## ln -s eipc eipcmsg
-## ln -s eipc eipcprint
+>###### ln -s eipc eipcls
+>###### ln -s eipc eipccat
+>###### ln -s eipc eipcmsg
+>###### ln -s eipc eipcprint
 
 ---
 一个简单的进程间通讯的工具,它可以监听进程间消息执行的次数以及log的查看以及进程间的程序调用,并提供了几个比较好的工具用来模拟消息发送,输出一共有三个主要文件, eipcd 用于守护进程 , libeipc.so 用于进程的集成库 , eipc 用于调试工具集(eipcls , eipccat , eipcprint , eipcmsg 都是eipc的软连接)
-## ln -s eipc eipcls
-## ln -s eipc eipccat
-## ln -s eipc eipcmsg
-## ln -s eipc eipcprint
+>######  ln -s eipc eipcls
+>######  ln -s eipc eipccat
+>######  ln -s eipc eipcmsg
+>######  ln -s eipc eipcprint
 
 ### eipcd   守护进程,需要提前启动,开机启动(daemon process , run after system poweron)
 easyipc守护进程,需要在其它用到easyipc功能的进程启动之前启动(推荐),并一般在后台运行 (使用 &)
