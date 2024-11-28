@@ -6,7 +6,7 @@
 #define IPC_CLI_SOCKET_PREFIX "/var/"
 #define IPC_CLI_SOCKET_MSG_SUFFIX ".msg.socket"
 #define IPC_CLI_SOCKET_API_SUFFIX ".api.socket"
-#define IPC_CONSOLE_BROADCAST_SOCKET "var/ipc.console.bd.socket"
+#define IPC_CONSOLE_BROADCAST_SOCKET "/var/ipc.bd.socket"
 
 #define IPC_CTL_PROT 35669
 #define IPC_MSG_PROT 35670

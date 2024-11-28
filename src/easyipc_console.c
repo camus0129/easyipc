@@ -260,7 +260,6 @@ void eipcc_ctr_daemon(IPC_CLI_TYPE type,int size,void *data)
 	{
 		memcpy(&icp->data,data,size);
 	}
-	printf("eipcc_ctr_daemon to addr socket = %s\n",eipcc_toAddr.sun_path);
 	sendto(eipcc_sock,icp,sizeof(ipc_cli_packet)+size,0,(struct sockaddr *)&eipcc_toAddr,sizeof(struct sockaddr_un));
 	free(icp);
 }
@@ -269,9 +268,9 @@ void eipcc_ctr_daemon(IPC_CLI_TYPE type,int size,void *data)
 void eipcc_print_console_display()
 {
 	struct sockaddr_un addrto;
-	bzero(&addrto, sizeof(struct sockaddr_un));
+	memset(&addrto,0,sizeof(addrto));
 	addrto.sun_family = AF_UNIX;
-	strncpy(addrto.sun_path, IPC_CONSOLE_BROADCAST_SOCKET, sizeof(addrto.sun_path) - 1);
+	strcpy(addrto.sun_path, IPC_CONSOLE_BROADCAST_SOCKET);
 
 	int sock = -1;
 	if ((sock = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1) 
@@ -279,30 +278,15 @@ void eipcc_print_console_display()
 		printf("socket error\r\n");
 		return;
 	}	
-
-	const int opt = 1;
-	int nb = 0;
-	nb = setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char *)&opt, sizeof(opt));
-	if(nb == -1)
-	{
-		printf("set socket error...\r\n");
-		return ;
-	}
-	int one=1;
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
-	setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &one, sizeof(one));
-
-
-	if(bind(sock,(struct sockaddr *)&(addrto), sizeof(struct sockaddr_un)) == -1) 
+	unlink(IPC_CONSOLE_BROADCAST_SOCKET);
+	if(bind(sock,(struct sockaddr *)&addrto, sizeof(struct sockaddr_un)) == -1) 
 	{	
 		printf("bind error...\r\n");
 		return ;
 	}
-
 	while(1)
 	{
 		char smsg[IPC_DEBUG_PRINT_MAX_SIZE*4] = {0};
-
 		int ret=recvfrom(sock, smsg, IPC_DEBUG_PRINT_MAX_SIZE*4, 0,NULL,NULL);
 		if(ret<=0)
 		{
@@ -645,7 +629,6 @@ int main(int argc , char * argv[])
 		snprintf(icpp.printf_log_type_flag,16,"UPS");
 		snprintf(icpp.printf_log_level_flag,16,"EWNID");
 		icpp.printf_broadcast_flag = 0;
-		
 		while((oc = getopt(argc, argv, "l:t:p:dhur")) != -1)
     	{
         	switch(oc)
