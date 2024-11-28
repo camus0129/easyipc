@@ -260,6 +260,7 @@ void eipcc_ctr_daemon(IPC_CLI_TYPE type,int size,void *data)
 	{
 		memcpy(&icp->data,data,size);
 	}
+	printf("eipcc_ctr_daemon to addr socket = %s\n",eipcc_toAddr.sun_path);
 	sendto(eipcc_sock,icp,sizeof(ipc_cli_packet)+size,0,(struct sockaddr *)&eipcc_toAddr,sizeof(struct sockaddr_un));
 	free(icp);
 }
@@ -270,7 +271,7 @@ void eipcc_print_console_display()
 	struct sockaddr_un addrto;
 	bzero(&addrto, sizeof(struct sockaddr_un));
 	addrto.sun_family = AF_UNIX;
-	strncpy(addrto.sun_path, IPC_CTL_SOCKET, sizeof(addrto.sun_path) - 1);
+	strncpy(addrto.sun_path, IPC_CONSOLE_BROADCAST_SOCKET, sizeof(addrto.sun_path) - 1);
 
 	int sock = -1;
 	if ((sock = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1) 

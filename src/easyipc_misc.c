@@ -464,7 +464,6 @@ void ipcd_console_local_broadcast(char *fmt, ...)
 	static int sock_rpc = -1;
 	static struct sockaddr_un addrto_rpc;
 	static int nlen_rpc=sizeof(addrto_rpc);
-
 	if(printf_rpc_flag != 0)
 	{
 		if(sock_rpc<=0)
@@ -528,14 +527,14 @@ void ipcd_console_local_broadcast(char *fmt, ...)
 		if(sock>0)
 		{
 			char sprint_buf[IPC_DEBUG_PRINT_MAX_SIZE*4]={0};
-			
+			strcpy(addrto.sun_path,IPC_CONSOLE_BROADCAST_SOCKET);
 			va_list args;
 			int n;
 			va_start(args, fmt);
 			n = vsnprintf(sprint_buf, IPC_DEBUG_PRINT_MAX_SIZE*4,fmt, args);
 			va_end(args);
 		
-			sendto(sock, sprint_buf, strlen(sprint_buf), 0, (struct sockaddr*)&addrto, nlen);
+			sendto(sock, sprint_buf, strlen(sprint_buf), 0, (struct sockaddr*)&addrto, sizeof(addrto));
 		}
 	}
 	
