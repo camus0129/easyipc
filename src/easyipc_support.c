@@ -172,7 +172,7 @@ static void ipc_connect_daemon(ipc_handle *ipc)
 	}
 	ipc->send_sock=sock;
 	ipc->toAddr.sun_family=AF_UNIX;
-	strcpy(ipc->toAddr.sun_path, IPC_MSG_PATH);
+	strcpy(ipc->toAddr.sun_path, IPC_MSG_SOCKET);
 	
 	_join_exit_info join_exit_info;
 	memset(&join_exit_info,0,sizeof(join_exit_info));
@@ -1118,10 +1118,11 @@ ipc_handle* ipc_creat(const char *pname)
 
 	memset(&fromAddr,0,sizeof(fromAddr));
 	fromAddr.sun_family=AF_UNIX;
-	char IPC_CLI_PATH[100]={0};
+	char ipc_msg_socket_name[108]={0};
 msg_re_bind:	
-	sprintf(IPC_CLI_PATH,"/tmp/cli_path_base%d",port);
-	strcpy(fromAddr.sun_path, IPC_CLI_PATH);
+	sprintf(ipc_msg_socket_name,"%s%s%s",IPC_CLI_SOCKET_PREFIX,pname,IPC_CLI_SOCKET_MSG_SUFFIX);
+	strcpy(fromAddr.sun_path, ipc_msg_socket_name);
+	unlink(fromAddr.sun_path);
 	if(bind(sock,(struct sockaddr*)&fromAddr,sizeof(fromAddr))<0)
 	{
 		//printf("errno=%d\n",errno);
@@ -1154,10 +1155,11 @@ msg_re_bind:
 	
 	memset(&fromAddr,0,sizeof(fromAddr));
 	fromAddr.sun_family=AF_UNIX;
-	char IPC_CLI_API_PATH[100]={0};
+	char ipc_api_socket_name[108]={0};
 api_re_bind:	
-	sprintf(IPC_CLI_API_PATH,"/tmp/cli_path_base%d",port);
-	strcpy(fromAddr.sun_path, IPC_CLI_API_PATH);
+	sprintf(ipc_api_socket_name,"%s%s%s",IPC_CLI_SOCKET_PREFIX,pname,IPC_CLI_SOCKET_API_SUFFIX);
+	strcpy(fromAddr.sun_path, ipc_api_socket_name);
+	unlink(fromAddr.sun_path);
 	if(bind(sock,(struct sockaddr*)&fromAddr,sizeof(fromAddr))<0)
 	{
 		//printf("errno=%d\n",errno);

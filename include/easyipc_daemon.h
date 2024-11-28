@@ -1,9 +1,11 @@
 #ifndef __easyipc_daemon_h__
 #define __easyipc_daemon_h__
 
-#define IPC_CTL_PATH "/tmp/ctl_path"
-#define IPC_MSG_PATH "/tmp/msg_path"
-#define IPC_CLI_PATH_BASE "/tmp/cli_path_base"
+#define IPC_CTL_SOCKET "/var/ipc.ctl.socket"
+#define IPC_MSG_SOCKET "/var/ipc.msg.socket"
+#define IPC_CLI_SOCKET_PREFIX "/var/"
+#define IPC_CLI_SOCKET_MSG_SUFFIX ".msg.socket"
+#define IPC_CLI_SOCKET_API_SUFFIX ".api.socket"
 
 #define IPC_CTL_PROT 35669
 #define IPC_MSG_PROT 35670
@@ -195,5 +197,5 @@ extern char printf_rpc_flag;
 void ipcd_misc_help();
 void ipcd_debug_init();
 char* ipcd_get_pname_via_pid(int pid,char *pname);
-
+void remove_socket_link_file(char *base_name,int port);
 #endif

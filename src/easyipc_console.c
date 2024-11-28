@@ -70,7 +70,7 @@ void eipcc_connect_daemon()
 	}
 
 	eipcc_toAddr.sun_family=AF_UNIX;
-	strncpy(eipcc_toAddr.sun_path, IPC_CTL_PATH, sizeof(eipcc_toAddr.sun_path) - 1);
+	strncpy(eipcc_toAddr.sun_path, IPC_CTL_SOCKET, sizeof(eipcc_toAddr.sun_path) - 1);
 }
 
 
@@ -270,7 +270,7 @@ void eipcc_print_console_display()
 	struct sockaddr_un addrto;
 	bzero(&addrto, sizeof(struct sockaddr_un));
 	addrto.sun_family = AF_UNIX;
-	strncpy(addrto.sun_path, IPC_CTL_PATH, sizeof(addrto.sun_path) - 1);
+	strncpy(addrto.sun_path, IPC_CTL_SOCKET, sizeof(addrto.sun_path) - 1);
 
 	int sock = -1;
 	if ((sock = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1) 

@@ -294,7 +294,8 @@ void ipcd_register_api(_register_info *register_info)
 						register_info->register_process_pid,
 						"[%s] register api repeat",register_info->register_msg_name);
 					return;
-				}
+				}
+
 			}
 		
 			_m_member *m_member = malloc(sizeof(_m_member));
@@ -836,8 +837,8 @@ void ipcd_join_ack(_mlist_member *mlm)
 	ipc_packet->send_pid = mlm->pid;
 	ipc_packet->size = 0;
 	mlm->toAddr.sun_family = AF_UNIX;
-	char ack_path[50]={0};
-	sprintf(ack_path,"/tmp/cli_path_base%d",mlm->msg_port);
+	char ack_path[108]={0};
+	sprintf(ack_path,"%s%s%s",IPC_CLI_SOCKET_PREFIX,mlm->pname,IPC_CLI_SOCKET_MSG_SUFFIX);
 	strcpy(mlm->toAddr.sun_path,ack_path);
 #if USE_UDP	
 	//printf("ipcd_join_ack to addr %s\n",mlm->toAddr.sun_path);
@@ -861,7 +862,7 @@ void ipcd_join_ack_fail(int pid, int port,struct sockaddr_un *toAddr)
 	ipc_packet->size = 0;
 	//toAddr->sin_port = htons(port);
 #if USE_UDP	
-	sendto(eipcd_sock,ipc_packet,sendsize,0,(struct sockaddr*)toAddr,sizeof(struct sockaddr));
+	sendto(eipcd_sock,ipc_packet,sendsize,0,(struct sockaddr*)toAddr,sizeof(struct sockaddr_un));
 #endif
 	free(ipc_packet);
 }
@@ -898,7 +899,7 @@ void *ipcd_ctl_recv(void *param)
 	struct sockaddr_un fromAddr;
 	int recvLen;
 	unsigned int addrLen;
-	unlink(IPC_CTL_PATH);
+	unlink(IPC_CTL_SOCKET);
 	char *recvBuffer = malloc(IPC_CMDLINE_MAX_SIZE);
 	sock = socket(AF_UNIX,SOCK_DGRAM,0);
 	if(sock < 0)
@@ -908,7 +909,7 @@ void *ipcd_ctl_recv(void *param)
 	}
 	memset(&fromAddr,0,sizeof(fromAddr));
 	fromAddr.sun_family=AF_UNIX;
-	strcpy(fromAddr.sun_path, IPC_CTL_PATH);
+	strcpy(fromAddr.sun_path, IPC_CTL_SOCKET);
 	if(bind(sock,(struct sockaddr*)&fromAddr,sizeof(fromAddr))<0)
 	{
 		printf("eipcd bind ctl socket fail.\r\n");
@@ -944,7 +945,7 @@ void *ipcd_msg_recv(void *param)
 	int recvLen;
 	unsigned int addrLen;
 	char *recvBuffer = malloc(eipc_conf_p->ipc_msg_packet_max_size);
-	unlink(IPC_MSG_PATH);
+	unlink(IPC_MSG_SOCKET);
 #if USE_UDP	
 	sock = socket(AF_UNIX,SOCK_DGRAM,0);
 #endif
@@ -955,7 +956,7 @@ void *ipcd_msg_recv(void *param)
 	}
 	memset(&fromAddr,0,sizeof(fromAddr));
 	fromAddr.sun_family=AF_UNIX;
-	strcpy(fromAddr.sun_path, IPC_MSG_PATH);
+	strcpy(fromAddr.sun_path, IPC_MSG_SOCKET);
 	if(bind(sock,(struct sockaddr*)&fromAddr,sizeof(fromAddr))<0)
 	{
  		printf("eipcd bind msg recv socket fail.\r\n");
@@ -1727,6 +1728,12 @@ int main(int argc , char *argv[])
 	return 0;
 }
 
-
+void remove_socket_link_file(char *base_name,int port)
+{
+	char link_path[20]= {0};
+	sprintf(link_path,"%s%d",base_name,port);
+	printf("unlink linkpath = %s\n",link_path);
+	unlink(link_path);
+}
 
 
