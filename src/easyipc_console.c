@@ -252,7 +252,6 @@ void ipc_cat_deamon(char *level,char *mode,char *pname,char *keyword,int offset)
 
 void eipcc_ctr_daemon(IPC_CLI_TYPE type,int size,void *data)
 {
-	int res;
 	ipc_cli_packet *icp = malloc(sizeof(ipc_cli_packet)+size);
 	memset(icp,0,sizeof(ipc_cli_packet)+size);
 	icp->ict=type;
@@ -261,15 +260,7 @@ void eipcc_ctr_daemon(IPC_CLI_TYPE type,int size,void *data)
 	{
 		memcpy(&icp->data,data,size);
 	}
-	res = sendto(eipcc_sock,icp,sizeof(ipc_cli_packet)+size,0,(struct sockaddr *)&eipcc_toAddr,sizeof(struct sockaddr_un));
-	if(res<0)
-	{
-		printf("eipcc_ctr_daemon send fail\n");
-	}
-	else
-	{
-		printf("eipcc_ctr_daemon send ok\n");
-	}
+	sendto(eipcc_sock,icp,sizeof(ipc_cli_packet)+size,0,(struct sockaddr *)&eipcc_toAddr,sizeof(struct sockaddr_un));
 	free(icp);
 }
 
@@ -328,7 +319,7 @@ int main(int argc , char * argv[])
 {
 	int oc; 					/*选项字符 */
 	char *b_opt_arg;			/*选项参数字串 */
-	printf("eipc stat\n argc %d argv[0] = %s\n",argc,argv[0]);
+
 	eipcc_connect_daemon();
 
 	if(!strcmp(argv[0],"eipchelp"))
@@ -502,13 +493,13 @@ int main(int argc , char * argv[])
 			}			
 			return 0;
 		}
-		printf("creat eipcss msg\n");
+
+
+		
 
 		if(argc>2 && argc%2==0)
-		{			
-			printf("ipc creat start\n");
+		{
 			ipc_handle * ipcmsg = ipc_creat("eipcc_msg");
-
 			int malloc_size=0;
 			int i,param_num = (argc/2)-1;
 			char *param_buffer=NULL;

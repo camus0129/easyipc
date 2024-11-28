@@ -52,7 +52,7 @@ int find_netif(char *ifname)
     struct ifconf ifc;
     char mac[32] = {0};
  
-    if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) >= 0)
+    if((fd = socket(AF_INET, SOCK_DGRAM, 0)) >= 0)
     {
         int i = 0;
         ifc.ifc_len = sizeof(buf);
@@ -295,7 +295,6 @@ void ipcd_register_api(_register_info *register_info)
 						"[%s] register api repeat",register_info->register_msg_name);
 					return;
 				}
-
 			}
 		
 			_m_member *m_member = malloc(sizeof(_m_member));
@@ -841,7 +840,7 @@ void ipcd_join_ack(_mlist_member *mlm)
 	sprintf(ack_path,"/tmp/cli_path_base%d",mlm->msg_port);
 	strcpy(mlm->toAddr.sun_path,ack_path);
 #if USE_UDP	
-	printf("ipcd_join_ack to addr %s\n",mlm->toAddr.sun_path);
+	//printf("ipcd_join_ack to addr %s\n",mlm->toAddr.sun_path);
 	int ret = sendto(eipcd_sock,ipc_packet,sendsize,0,(struct sockaddr*)&mlm->toAddr,sizeof(mlm->toAddr));
 	if(ret<0)
 	{
@@ -929,7 +928,6 @@ void *ipcd_ctl_recv(void *param)
 		}
 		if(recvLen>0)
 		{
-			printf("ipcd_msg_recv ctl data ok\n");
 			pthread_mutex_lock(&mlist_mutex);
 			ipcctl_analysis_core((ipc_cli_packet *)recvBuffer,&toAddr);
 			pthread_mutex_unlock(&mlist_mutex);
@@ -980,7 +978,6 @@ void *ipcd_msg_recv(void *param)
 	 		close(sock);
 	 		exit(1);
 		}
-		//printf("ipcd_msg_recv data ok src_addr %s\n",toAddr.sun_path);
 		pthread_mutex_lock(&mlist_mutex);
 		ipcd_analysis_core((_ipc_packet *)recvBuffer,&toAddr);
 		pthread_mutex_unlock(&mlist_mutex);
@@ -1213,7 +1210,6 @@ void ipcd_analysis_core(_ipc_packet *ipc_packet,struct sockaddr_un *toAddr)
 		_mlist_member * mlm = ipcd_join(join_exit_info,toAddr);
 		if(mlm)
 		{
-			//printf("get ENUM_PROCESS_JOIN\n");
 			ipcd_join_ack(mlm);
 		}else
 			ipcd_join_ack_fail( join_exit_info->join_exit_process_pid,
@@ -1679,7 +1675,7 @@ int main(int argc , char *argv[])
 
 	//if(daemon_flag==1)
 	//	daemon(0,0);
-	#if 0
+	#if 0 //disable for local socket
 	if(find_netif("lo")<0)
 	{
 		printf("eipcd start fail , netcard lo cant find!!!\n");
@@ -1727,7 +1723,6 @@ int main(int argc , char *argv[])
 	ipcd_api_probe();
 	ipc_api_timeout_check_thread_creat();
 	ipc_live_thread_creat();
-	printf("eipc daemon init done\n");
 	pause();
 	return 0;
 }

@@ -911,7 +911,7 @@ void *ipc_recv_msg_alloc(void *param)
 				printf("easyipc daemon exit ! \r\n");
 				exit(0);
 			}
-			printf("ipc_recv_msg_alloc ack\n");
+
 			ipc_recv_analysis(icm,recvBuffer,recvLen);
 		}
 	}
@@ -958,7 +958,6 @@ void ipc_recv_analysis(ipc_handle *icm,void *data,int size)
 {
 		int sendsize = size;
 		_ipc_packet *ipc_packet = (_ipc_packet *)data;
-		printf("%s,%d\n",__func__,__LINE__);
 		//printf("recvdata:cnt=%d , size = %d ipc_packet->iit=%d\r\n",i++,size,ipc_packet->iit);
 
 		switch(ipc_packet->iit)
@@ -1081,7 +1080,6 @@ ipc_handle* ipc_creat(const char *pname)
 	
 	snprintf(ipc_cli_member->alias_name,PROCESS_NAME_MAX_SIZE,"%s",pname);
 	ipc_cli_member->pid = getpid()+pid_magic_number*1000000;
-	printf("ipc_cli_member->pid %d\n",ipc_cli_member->pid);
 	if(!(ipc_cli_member->msg_list&&ipc_cli_member->api_list))
 	{
 		printf("ipc_init dlist_create fail\r\n");
@@ -1089,6 +1087,7 @@ ipc_handle* ipc_creat(const char *pname)
 	}
 
 	int i,ipc_size = dlist_len(ipc_list);
+
 	for(i=0;i<ipc_size;i++)
 	{
 		ipc_handle * p = dlist_get_data_safe(ipc_list,i);
@@ -1102,9 +1101,9 @@ ipc_handle* ipc_creat(const char *pname)
 	}	
 
 	int port=IPC_CLI_PORT_BASE;
+
 	int sock;
 	struct sockaddr_un fromAddr;
-	//unlink();
 #if USE_UDP	
 	sock = socket(AF_UNIX,SOCK_DGRAM,0);
 #endif
@@ -1114,7 +1113,7 @@ ipc_handle* ipc_creat(const char *pname)
 		exit(0);
 	}else
 	{
-		printf("ipc_creat msg sock ok %d\r\n");
+		//printf("ipc_creat msg sock ok\r\n");
 	}
 
 	memset(&fromAddr,0,sizeof(fromAddr));
@@ -1131,7 +1130,7 @@ msg_re_bind:
 		goto msg_re_bind;
 	}else
 	{
-		printf("ipc_creat msg bind ok sock = %d port = %d IPC_CLI_PATH = %s\r\n",sock,port,IPC_CLI_PATH);
+		//printf("ipc_creat msg bind ok sock = %d port = %d IPC_CLI_PATH = %s\r\n",sock,port,IPC_CLI_PATH);
 	}
 
 	ipc_cli_member->msg_recv_port = port;
@@ -1144,14 +1143,15 @@ msg_re_bind:
 #endif
 	if(sock < 0)
 	{
-		//printf("errno=%d\n",errno);
+		printf("errno=%d\n",errno);
 		exit(0);
 	}
 	else
 	{
-		printf("ipc_creat api sock ok\r\n");
+		//printf("ipc_creat api sock ok\r\n");
 	}
 
+	
 	memset(&fromAddr,0,sizeof(fromAddr));
 	fromAddr.sun_family=AF_UNIX;
 	char IPC_CLI_API_PATH[100]={0};
@@ -1166,10 +1166,12 @@ api_re_bind:
 		goto api_re_bind;
 	}else
 	{
-		printf("ipc_creat api bind ok, sock=%d port = %d IPC_CLI_API_PATH = %s\r\n",sock,port,IPC_CLI_API_PATH);
+		//printf("ipc_creat api bind ok, sock=%d port = %d IPC_CLI_API_PATH = %s\r\n",sock,port,IPC_CLI_API_PATH);
 	}
+
 	ipc_cli_member->api_recv_port = port;
 	ipc_cli_member->api_recv_sock = sock;
+
 	_msg_thread_strart(ipc_cli_member);
 	_api_thread_strart(ipc_cli_member);
 
@@ -1187,7 +1189,7 @@ retry_connect_daemon:
 	outtime.tv_sec = now.tv_sec;
 	outtime.tv_nsec = now.tv_usec * 1000;
 	ipc_connect_daemon(ipc_cli_member);
-	printf("%s,%d\n",__func__,__LINE__);
+
 	//sem_wait(&ipc_cli_member->connect_sem);
 	
 	while ((s = sem_timedwait(&ipc_cli_member->connect_sem,&outtime)) == -1 && errno == EINTR)
@@ -1202,6 +1204,7 @@ retry_connect_daemon:
 	pthread_attr_t threadAttr;
 	pthread_attr_init(&threadAttr);
 	pthread_attr_setdetachstate(&threadAttr,PTHREAD_CREATE_DETACHED);
+
 	if(0 !=pthread_create(&tid_token, &threadAttr, ipc_spec_probe,ipc_cli_member))
 	{  
 		pthread_attr_destroy(&threadAttr);
@@ -1209,7 +1212,8 @@ retry_connect_daemon:
 	}	
 	pthread_attr_destroy(&threadAttr);		
 
-	printf("[%s] easyipc creat success\r\n",pname);
+	//printf("[%s] easyipc creat success\r\n",pname);
+
 	default_ipc = ipc_cli_member;
 	pid_magic_number++;
 

@@ -28,7 +28,6 @@ extern "C" {
 #include "dlist.h"
 
 #define eipc_version "1.0.0.9"
-#define SOCKET_PATH "/tmp/unix_socket"
 
 typedef enum
 {
