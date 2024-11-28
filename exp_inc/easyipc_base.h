@@ -24,10 +24,11 @@ extern "C" {
 #include <netinet/in.h>
 //#include <sys/fcntl.h>
 #include <sys/time.h>
+#include <sys/un.h>
 #include "dlist.h"
 
 #define eipc_version "1.0.0.9"
-
+#define SOCKET_PATH "/tmp/unix_socket"
 
 typedef enum
 {
@@ -121,7 +122,7 @@ typedef struct
 	sem_t api_recv_sem;
 	pthread_mutex_t msg_recv_mutex;
 	pthread_mutex_t api_recv_mutex;
-	struct sockaddr_in toAddr;
+	struct sockaddr_un toAddr;
 }ipc_handle;
 
 // 创建一个服务句柄,如果失败则返回NULL, pname是服务句柄名称,进程之间不要冲突

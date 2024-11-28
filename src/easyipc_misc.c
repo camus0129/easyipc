@@ -458,26 +458,24 @@ void ipcd_console_local_broadcast(char *fmt, ...)
 {
 	static int flag=0;
 	static int sock = -1;
-	static struct sockaddr_in addrto;
+	static struct sockaddr_un addrto;
 	static int nlen=sizeof(addrto);
 
 	static int sock_rpc = -1;
-	static struct sockaddr_in addrto_rpc;
+	static struct sockaddr_un addrto_rpc;
 	static int nlen_rpc=sizeof(addrto_rpc);
 
 	if(printf_rpc_flag != 0)
 	{
 		if(sock_rpc<=0)
 		{
-			bzero(&addrto_rpc, sizeof(struct sockaddr_in));
-			addrto_rpc.sin_family=AF_INET;
-			addrto_rpc.sin_port=htons(50393);
-			if((sock_rpc = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP))==-1)
+			bzero(&addrto_rpc, sizeof(struct sockaddr_un));
+			addrto_rpc.sun_family=AF_UNIX;
+			if((sock_rpc = socket(AF_UNIX,SOCK_DGRAM,0))==-1)
 			{	
 				printf("ipcd local console socket fail\r\n");
 				return ;
 			}
-			addrto_rpc.sin_addr.s_addr=htonl(INADDR_ANY);
 		}
 
 		if(sock_rpc>0)
@@ -497,9 +495,8 @@ void ipcd_console_local_broadcast(char *fmt, ...)
 	{
 		if(sock<=0)
 		{
-			bzero(&addrto, sizeof(struct sockaddr_in));
-			addrto.sin_family=AF_INET;
-			addrto.sin_port=htons(IPC_CONSOLE_BROADCAST_PORT);
+			bzero(&addrto, sizeof(struct sockaddr_un));
+			addrto.sun_family=AF_UNIX;
 #if 0	
 			if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) 
 			{	
@@ -520,12 +517,11 @@ void ipcd_console_local_broadcast(char *fmt, ...)
 			addrto.sin_addr.s_addr=htonl(INADDR_BROADCAST);
 			
 #else
-			if((sock = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP))==-1)
+			if((sock = socket(AF_UNIX,SOCK_DGRAM,0))==-1)
 			{	
 				printf("ipcd local console socket fail\r\n");
 				return ;
 			}
-			addrto.sin_addr.s_addr=htonl(INADDR_ANY);
 #endif
 		}
 

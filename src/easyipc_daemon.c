@@ -38,8 +38,8 @@ void ipcd_relay_api(_mlist_member *mlm,char *mname,int size,void *data);
 void ipcd_relay_msg(_mlist_member *mlm,char *mname,int size,void *data);
 _ipc_msg * ipcd_msg_pull();
 _ipc_api * ipcd_api_pull();
-void ipcd_analysis_core(_ipc_packet *ipc_packet,struct sockaddr_in *toAddr);
-void ipcctl_analysis_core(ipc_cli_packet *icp,struct sockaddr_in *toAddr);
+void ipcd_analysis_core(_ipc_packet *ipc_packet,struct sockaddr_un *toAddr);
+void ipcctl_analysis_core(ipc_cli_packet *icp,struct sockaddr_un *toAddr);
 void *_ipcd_msg_probe(void *param);
 void ipcd_api_ack_relay(_mlist_member *mlm,int size,void *data);
 char* strstri(char* str, const char* subStr);
@@ -52,7 +52,7 @@ int find_netif(char *ifname)
     struct ifconf ifc;
     char mac[32] = {0};
  
-    if((fd = socket(AF_INET, SOCK_DGRAM, 0)) >= 0)
+    if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) >= 0)
     {
         int i = 0;
         ifc.ifc_len = sizeof(buf);
@@ -295,6 +295,7 @@ void ipcd_register_api(_register_info *register_info)
 						"[%s] register api repeat",register_info->register_msg_name);
 					return;
 				}
+
 			}
 		
 			_m_member *m_member = malloc(sizeof(_m_member));
@@ -455,7 +456,7 @@ void ipcd_mlist_remove_via_pid(int pid)
 
 
 
-_mlist_member * ipcd_join(_join_exit_info *join_exit_info,struct sockaddr_in *toAddr)
+_mlist_member * ipcd_join(_join_exit_info *join_exit_info,struct sockaddr_un *toAddr)
 {
 
 	int member_size = dlist_len(mlist);
@@ -517,7 +518,7 @@ _mlist_member * ipcd_join(_join_exit_info *join_exit_info,struct sockaddr_in *to
 	mlist_member->api_list = dlist_create();
 	mlist_member->msg_port = join_exit_info->msg_port;	
 	mlist_member->api_port = join_exit_info->api_port;
-	memcpy(&mlist_member->toAddr,toAddr,sizeof(struct sockaddr_in));
+	memcpy(&mlist_member->toAddr,toAddr,sizeof(struct sockaddr_un));
 	mlist_member->mask_receiver = dlist_create();
 	mlist_member->mask_sender = dlist_create();
 	dlist_attach(mlist, mlist_member);
@@ -804,9 +805,9 @@ void ipcd_relay_msg(_mlist_member *mlm,char *mname,int size,void *data)
 	ipc_packet->send_pid = mlm->pid;
 	ipc_packet->size = size;
 	memcpy(&ipc_packet->data,data,size);
-	mlm->toAddr.sin_port = htons(mlm->msg_port);
+	//mlm->toAddr.sin_port = htons(mlm->msg_port);
 #if USE_UDP	
-	sendto(eipcd_sock,ipc_packet,sendsize,0,(struct sockaddr*)&mlm->toAddr,sizeof(struct sockaddr));
+	sendto(eipcd_sock,ipc_packet,sendsize,0,(struct sockaddr*)&mlm->toAddr,sizeof(mlm->toAddr));
 #endif
 	free(ipc_packet);
 }
@@ -820,9 +821,9 @@ void ipcd_relay_api(_mlist_member *mlm,char *mname,int size,void *data)
 	ipc_packet->send_pid = mlm->pid;
 	ipc_packet->size = size;
 	memcpy(&ipc_packet->data,data,size);
-	mlm->toAddr.sin_port = htons(mlm->api_port);
+	//mlm->toAddr.sin_port = htons(mlm->api_port);
 #if USE_UDP	
-	sendto(eipcd_sock,ipc_packet,sendsize,0,(struct sockaddr*)&mlm->toAddr,sizeof(struct sockaddr));
+	sendto(eipcd_sock,ipc_packet,sendsize,0,(struct sockaddr*)&mlm->toAddr,sizeof(mlm->toAddr));
 #endif
 	free(ipc_packet);
 }
@@ -835,15 +836,23 @@ void ipcd_join_ack(_mlist_member *mlm)
 	ipc_packet->iit = ENUM_PROCESS_JOIN_ACK;
 	ipc_packet->send_pid = mlm->pid;
 	ipc_packet->size = 0;
-	mlm->toAddr.sin_port = htons(mlm->msg_port);
+	mlm->toAddr.sun_family = AF_UNIX;
+	char ack_path[50]={0};
+	sprintf(ack_path,"/tmp/cli_path_base%d",mlm->msg_port);
+	strcpy(mlm->toAddr.sun_path,ack_path);
 #if USE_UDP	
-	sendto(eipcd_sock,ipc_packet,sendsize,0,(struct sockaddr*)&mlm->toAddr,sizeof(struct sockaddr));
+	printf("ipcd_join_ack to addr %s\n",mlm->toAddr.sun_path);
+	int ret = sendto(eipcd_sock,ipc_packet,sendsize,0,(struct sockaddr*)&mlm->toAddr,sizeof(mlm->toAddr));
+	if(ret<0)
+	{
+		printf("ipcd_join_ack send ack fail\n");
+	}
 #endif
 	free(ipc_packet);
 }
 
 
-void ipcd_join_ack_fail(int pid, int port,struct sockaddr_in *toAddr)
+void ipcd_join_ack_fail(int pid, int port,struct sockaddr_un *toAddr)
 {
 	int sendsize = sizeof(_ipc_packet);
 	_ipc_packet *ipc_packet = malloc(sendsize);
@@ -851,7 +860,7 @@ void ipcd_join_ack_fail(int pid, int port,struct sockaddr_in *toAddr)
 	ipc_packet->iit = ENUM_PROCESS_JOIN_ACK_FAIL;
 	ipc_packet->send_pid = pid;
 	ipc_packet->size = 0;
-	toAddr->sin_port = htons(port);
+	//toAddr->sin_port = htons(port);
 #if USE_UDP	
 	sendto(eipcd_sock,ipc_packet,sendsize,0,(struct sockaddr*)toAddr,sizeof(struct sockaddr));
 #endif
@@ -872,7 +881,7 @@ void ipcd_api_ack_relay(_mlist_member *mlm,int size,void *data)
 	ipc_packet->send_pid = mlm->pid;
 	ipc_packet->size = size;
 	memcpy(&ipc_packet->data,data,size);
-	mlm->toAddr.sin_port = htons(mlm->api_port);
+	//mlm->toAddr.sin_port = htons(mlm->api_port);
 	
 #if USE_UDP	
 	sendto(eipcd_sock,ipc_packet,sendsize,0,(struct sockaddr*)&mlm->toAddr,sizeof(struct sockaddr));
@@ -886,21 +895,21 @@ void ipcd_api_ack_relay(_mlist_member *mlm,int size,void *data)
 void *ipcd_ctl_recv(void *param)
 {
 	int sock;
-	struct sockaddr_in toAddr;
-	struct sockaddr_in fromAddr;
+	struct sockaddr_un toAddr;
+	struct sockaddr_un fromAddr;
 	int recvLen;
 	unsigned int addrLen;
+	unlink(IPC_CTL_PATH);
 	char *recvBuffer = malloc(IPC_CMDLINE_MAX_SIZE);
-	sock = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
+	sock = socket(AF_UNIX,SOCK_DGRAM,0);
 	if(sock < 0)
 	{
 		printf("eipcd creat ctl socket fail.\r\n");
  		exit(0);
 	}
 	memset(&fromAddr,0,sizeof(fromAddr));
-	fromAddr.sin_family=AF_INET;
-	fromAddr.sin_addr.s_addr=htonl(INADDR_ANY);
-	fromAddr.sin_port = htons(IPC_CTL_PROT);
+	fromAddr.sun_family=AF_UNIX;
+	strcpy(fromAddr.sun_path, IPC_CTL_PATH);
 	if(bind(sock,(struct sockaddr*)&fromAddr,sizeof(fromAddr))<0)
 	{
 		printf("eipcd bind ctl socket fail.\r\n");
@@ -920,6 +929,7 @@ void *ipcd_ctl_recv(void *param)
 		}
 		if(recvLen>0)
 		{
+			printf("ipcd_msg_recv ctl data ok\n");
 			pthread_mutex_lock(&mlist_mutex);
 			ipcctl_analysis_core((ipc_cli_packet *)recvBuffer,&toAddr);
 			pthread_mutex_unlock(&mlist_mutex);
@@ -931,13 +941,14 @@ void *ipcd_ctl_recv(void *param)
 void *ipcd_msg_recv(void *param)
 {
 	int sock;
-	struct sockaddr_in toAddr;
-	struct sockaddr_in fromAddr;
+	struct sockaddr_un toAddr;
+	struct sockaddr_un fromAddr;
 	int recvLen;
 	unsigned int addrLen;
 	char *recvBuffer = malloc(eipc_conf_p->ipc_msg_packet_max_size);
+	unlink(IPC_MSG_PATH);
 #if USE_UDP	
-	sock = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
+	sock = socket(AF_UNIX,SOCK_DGRAM,0);
 #endif
 	if(sock < 0)
 	{
@@ -945,10 +956,8 @@ void *ipcd_msg_recv(void *param)
  		exit(0);
 	}
 	memset(&fromAddr,0,sizeof(fromAddr));
-	fromAddr.sin_family=AF_INET;
-	fromAddr.sin_addr.s_addr=htonl(INADDR_ANY);
-	fromAddr.sin_port = htons(IPC_MSG_PROT);
-	
+	fromAddr.sun_family=AF_UNIX;
+	strcpy(fromAddr.sun_path, IPC_MSG_PATH);
 	if(bind(sock,(struct sockaddr*)&fromAddr,sizeof(fromAddr))<0)
 	{
  		printf("eipcd bind msg recv socket fail.\r\n");
@@ -971,6 +980,7 @@ void *ipcd_msg_recv(void *param)
 	 		close(sock);
 	 		exit(1);
 		}
+		//printf("ipcd_msg_recv data ok src_addr %s\n",toAddr.sun_path);
 		pthread_mutex_lock(&mlist_mutex);
 		ipcd_analysis_core((_ipc_packet *)recvBuffer,&toAddr);
 		pthread_mutex_unlock(&mlist_mutex);
@@ -981,7 +991,7 @@ void *ipcd_msg_recv(void *param)
 
 
 
-void ipcctl_analysis_core(ipc_cli_packet *icp,struct sockaddr_in *toAddr)
+void ipcctl_analysis_core(ipc_cli_packet *icp,struct sockaddr_un *toAddr)
 {
 	if(ENUM_IPC_CLI_HELP == icp->ict)
 	{
@@ -1168,7 +1178,7 @@ void ipcctl_analysis_core(ipc_cli_packet *icp,struct sockaddr_in *toAddr)
 
 
 
-void ipcd_analysis_core(_ipc_packet *ipc_packet,struct sockaddr_in *toAddr)
+void ipcd_analysis_core(_ipc_packet *ipc_packet,struct sockaddr_un *toAddr)
 {
 	static int api_public_magic_number=0;
 
@@ -1203,6 +1213,7 @@ void ipcd_analysis_core(_ipc_packet *ipc_packet,struct sockaddr_in *toAddr)
 		_mlist_member * mlm = ipcd_join(join_exit_info,toAddr);
 		if(mlm)
 		{
+			//printf("get ENUM_PROCESS_JOIN\n");
 			ipcd_join_ack(mlm);
 		}else
 			ipcd_join_ack_fail( join_exit_info->join_exit_process_pid,
@@ -1554,7 +1565,7 @@ void ipcd_init()
 
 
 socket_retry_01:
-	eipcd_sock = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
+	eipcd_sock = socket(AF_UNIX,SOCK_DGRAM,0);
 	if(eipcd_sock<=0)
 	{
 		printf("eipcd_sock faile , socket_retry_01\n");
@@ -1668,12 +1679,13 @@ int main(int argc , char *argv[])
 
 	//if(daemon_flag==1)
 	//	daemon(0,0);
+	#if 0
 	if(find_netif("lo")<0)
 	{
 		printf("eipcd start fail , netcard lo cant find!!!\n");
 		return 0;
 	}
-
+	#endif
 
 	eipc_conf_p = malloc(sizeof(easyipc_config));
 	memset(eipc_conf_p,0,sizeof(easyipc_config));
@@ -1715,6 +1727,7 @@ int main(int argc , char *argv[])
 	ipcd_api_probe();
 	ipc_api_timeout_check_thread_creat();
 	ipc_live_thread_creat();
+	printf("eipc daemon init done\n");
 	pause();
 	return 0;
 }

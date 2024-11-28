@@ -45,7 +45,7 @@
 */
 
 
-struct sockaddr_in eipcc_toAddr;
+struct sockaddr_un eipcc_toAddr;
 static int eipcc_sock=-1;
 easyipc_config *eipc_conf_p_4cat = NULL;
 
@@ -62,16 +62,15 @@ static void ipc_misc_del_tail_spec(char *str)
 
 void eipcc_connect_daemon()
 {
-	eipcc_sock = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
+	eipcc_sock = socket(AF_UNIX,SOCK_DGRAM,0);
 	if(eipcc_sock<0)
 	{
 		printf("ipc_connect_daemon udp socket creat fail\r\n");
 		return;
 	}
 
-	eipcc_toAddr.sin_family=AF_INET;
-	eipcc_toAddr.sin_addr.s_addr=inet_addr("127.0.0.1");
-	eipcc_toAddr.sin_port = htons(IPC_CTL_PROT);
+	eipcc_toAddr.sun_family=AF_UNIX;
+	strncpy(eipcc_toAddr.sun_path, IPC_CTL_PATH, sizeof(eipcc_toAddr.sun_path) - 1);
 }
 
 
@@ -253,6 +252,7 @@ void ipc_cat_deamon(char *level,char *mode,char *pname,char *keyword,int offset)
 
 void eipcc_ctr_daemon(IPC_CLI_TYPE type,int size,void *data)
 {
+	int res;
 	ipc_cli_packet *icp = malloc(sizeof(ipc_cli_packet)+size);
 	memset(icp,0,sizeof(ipc_cli_packet)+size);
 	icp->ict=type;
@@ -261,21 +261,28 @@ void eipcc_ctr_daemon(IPC_CLI_TYPE type,int size,void *data)
 	{
 		memcpy(&icp->data,data,size);
 	}
-	sendto(eipcc_sock,icp,sizeof(ipc_cli_packet)+size,0,(struct sockaddr *)&eipcc_toAddr,sizeof(struct sockaddr_in));
+	res = sendto(eipcc_sock,icp,sizeof(ipc_cli_packet)+size,0,(struct sockaddr *)&eipcc_toAddr,sizeof(struct sockaddr_un));
+	if(res<0)
+	{
+		printf("eipcc_ctr_daemon send fail\n");
+	}
+	else
+	{
+		printf("eipcc_ctr_daemon send ok\n");
+	}
 	free(icp);
 }
 
 
 void eipcc_print_console_display()
 {
-	struct sockaddr_in addrto;
-	bzero(&addrto, sizeof(struct sockaddr_in));
-	addrto.sin_family = AF_INET;
-	addrto.sin_addr.s_addr = htonl(INADDR_ANY);
-	addrto.sin_port = htons(IPC_CONSOLE_BROADCAST_PORT);
+	struct sockaddr_un addrto;
+	bzero(&addrto, sizeof(struct sockaddr_un));
+	addrto.sun_family = AF_UNIX;
+	strncpy(addrto.sun_path, IPC_CTL_PATH, sizeof(addrto.sun_path) - 1);
 
 	int sock = -1;
-	if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) 
+	if ((sock = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1) 
 	{	
 		printf("socket error\r\n");
 		return;
@@ -294,7 +301,7 @@ void eipcc_print_console_display()
 	setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &one, sizeof(one));
 
 
-	if(bind(sock,(struct sockaddr *)&(addrto), sizeof(struct sockaddr_in)) == -1) 
+	if(bind(sock,(struct sockaddr *)&(addrto), sizeof(struct sockaddr_un)) == -1) 
 	{	
 		printf("bind error...\r\n");
 		return ;
@@ -321,7 +328,7 @@ int main(int argc , char * argv[])
 {
 	int oc; 					/*选项字符 */
 	char *b_opt_arg;			/*选项参数字串 */
-
+	printf("eipc stat\n argc %d argv[0] = %s\n",argc,argv[0]);
 	eipcc_connect_daemon();
 
 	if(!strcmp(argv[0],"eipchelp"))
@@ -495,13 +502,13 @@ int main(int argc , char * argv[])
 			}			
 			return 0;
 		}
-
-
-		
+		printf("creat eipcss msg\n");
 
 		if(argc>2 && argc%2==0)
-		{
+		{			
+			printf("ipc creat start\n");
 			ipc_handle * ipcmsg = ipc_creat("eipcc_msg");
+
 			int malloc_size=0;
 			int i,param_num = (argc/2)-1;
 			char *param_buffer=NULL;

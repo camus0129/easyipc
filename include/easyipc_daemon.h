@@ -1,6 +1,10 @@
 #ifndef __easyipc_daemon_h__
 #define __easyipc_daemon_h__
 
+#define IPC_CTL_PATH "/tmp/ctl_path"
+#define IPC_MSG_PATH "/tmp/msg_path"
+#define IPC_CLI_PATH_BASE "/tmp/cli_path_base"
+
 #define IPC_CTL_PROT 35669
 #define IPC_MSG_PROT 35670
 #define IPC_CLI_PORT_BASE 40100
@@ -113,7 +117,7 @@ typedef struct
     int suspend;
 	DList *pmsg_list;
 	DList *api_list;
-	struct sockaddr_in toAddr;
+	struct sockaddr_un toAddr;
 	DList *mask_sender;		//用于plugin的mask屏蔽消息
 	DList *mask_receiver;
 	char daemon_cmd[IPC_SYSCMD_SIZE];
