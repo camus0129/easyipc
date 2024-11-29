@@ -27,7 +27,7 @@ extern "C" {
 #include <sys/un.h>
 #include "dlist.h"
 
-#define eipc_version "1.0.0.9"
+#define eipc_version "1.0.1.0"
 
 typedef enum
 {
