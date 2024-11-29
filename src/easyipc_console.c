@@ -641,7 +641,7 @@ int main(int argc , char * argv[])
 				case 'r':
 					eipcc_ctr_daemon(ENUM_IPC_CLI_RPC,sizeof(ipc_cli_print_packet),&icpp);
 					usleep(10*1000);
-					return;	
+					return 0;	
         		case 'l':
 					memset(icpp.printf_log_level_flag,0,16);
 					snprintf(icpp.printf_log_level_flag,16,"%s",optarg);
