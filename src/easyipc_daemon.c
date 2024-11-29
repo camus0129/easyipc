@@ -899,7 +899,7 @@ void *ipcd_ctl_recv(void *param)
 	struct sockaddr_un fromAddr;
 	int recvLen;
 	unsigned int addrLen;
-	unlink(IPC_CTL_SOCKET);
+	unlink(IPC_CTL_SOCKET);  //first unlink old file to avoid bind fail case
 	char *recvBuffer = malloc(IPC_CMDLINE_MAX_SIZE);
 	sock = socket(AF_UNIX,SOCK_DGRAM,0);
 	if(sock < 0)
@@ -945,7 +945,7 @@ void *ipcd_msg_recv(void *param)
 	int recvLen;
 	unsigned int addrLen;
 	char *recvBuffer = malloc(eipc_conf_p->ipc_msg_packet_max_size);
-	unlink(IPC_MSG_SOCKET);
+	unlink(IPC_MSG_SOCKET); //unlink old socket to avoid build fail
 #if USE_UDP	
 	sock = socket(AF_UNIX,SOCK_DGRAM,0);
 #endif
@@ -956,7 +956,7 @@ void *ipcd_msg_recv(void *param)
 	}
 	memset(&fromAddr,0,sizeof(fromAddr));
 	fromAddr.sun_family=AF_UNIX;
-	strcpy(fromAddr.sun_path, IPC_MSG_SOCKET);
+	strcpy(fromAddr.sun_path, IPC_MSG_SOCKET);  //used by eipcd for receive other msg
 	if(bind(sock,(struct sockaddr*)&fromAddr,sizeof(fromAddr))<0)
 	{
  		printf("eipcd bind msg recv socket fail.\r\n");

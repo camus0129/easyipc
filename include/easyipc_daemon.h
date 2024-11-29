@@ -1,6 +1,7 @@
 #ifndef __easyipc_daemon_h__
 #define __easyipc_daemon_h__
 
+//AF_UNIX socket using file to comunication
 #define IPC_CTL_SOCKET "/var/ipc.ctl.socket"
 #define IPC_MSG_SOCKET "/var/ipc.msg.socket"
 #define IPC_CLI_SOCKET_PREFIX "/var/"
